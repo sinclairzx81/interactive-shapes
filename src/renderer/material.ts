@@ -30,7 +30,7 @@ import { Uuid }   from "./uuid"
 
 export class Material {
   public id: string
-  constructor(public color: string = "#DDD", public wireframe: boolean = false) {
+  constructor(public color: string = "#BBB", public wireframe: boolean = false) {
     this.id = Uuid.next()
   }
 

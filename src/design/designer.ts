@@ -39,7 +39,7 @@ import { Mesh }     from "../renderer/index"
 export type TransformMode = "translate" | "rotate" | "scale"
 
 const BACKGROUND_COLOR = "#333"
-const COLOR_NORMAL     = "#DDD"
+const COLOR_NORMAL     = "#BBB"
 const COLOR_HOVER      = "#FFF"
 const COLOR_SELECT     = "#CC0"
 
@@ -115,7 +115,10 @@ export class Designer {
 
   private event(event: InteractionEvent) {
     switch(event.type) {
-      case "mousemove":  this.mesh_hover  (event); break;
+      case "mousemove":  {
+        this.mesh_hover  (event);
+        break;
+      }
       case "mousedown":  this.mesh_select (event); break;
       case "mousewheel": this.camera_zoom (event); break;
       case "mousedrag": {
@@ -143,12 +146,19 @@ export class Designer {
   private mesh_hover(event: MouseMoveEvent) {
     const candidates = Selector.select(this.camera, this.scene, event.position)
     if (candidates.length > 0) {
+
+      this.canvas.style.cursor = "move"
+
       const candidate = candidates[0] as Mesh
       // if the hovering mesh is the candidate mesh
       // then return early, we don't care.
       if(this.hovering.id === candidate.id) {
         return
       }
+      if (this.hovering.id !== this.selected.id) {
+        this.hovering.material.color = COLOR_NORMAL
+      }
+
       this.hovering = candidate
       // next, set the hovering color ONLY if the
       // the hovering element isn't a selected
@@ -157,6 +167,9 @@ export class Designer {
         this.hovering.material.color = COLOR_HOVER
       }
     } else {
+
+      this.canvas.style.cursor = "default"
+
       // if no candidates exist, then we reset the
       // color to normal, ONLY if the hovering
       // mesh isn't selected.
@@ -197,16 +210,15 @@ export class Designer {
   }
 
   private mesh_rotate(event: MouseDragEvent, mesh: Mesh) {
-    const angle = event.direction.v[0] * Math.PI / 180.0
-    mesh.matrix = Matrix.multiply(mesh.matrix, Matrix.rotation(-angle))
+    const angle  = (event.direction.v[0] * Math.PI / 180.0) * 0.5
+    mesh.matrix  = Matrix.multiply(mesh.matrix, Matrix.rotation(-angle))
     this.on_change(this.camera, this.scene)
   }
 
   private mesh_scale(event: MouseDragEvent, mesh: Mesh) {
-    const right   = Vector.len(Vector.create(this.camera.matrix.v[0], this.camera.matrix.v[1])) * 100
-    const up      = Vector.len(Vector.create(this.camera.matrix.v[3], this.camera.matrix.v[4])) * 100
-    const offset  = Vector.div(event.direction, Vector.create(right, up))
-    const scale   = Matrix.scale(Vector.create(offset.v[0] + 1.0, offset.v[0] + 1.0))
+    const normal  = Vector.normalize(event.direction)
+    const offset  = Vector.scale(normal, 0.1)
+    const scale   = Matrix.scale(Vector.create(1.0 + offset.v[0] , 1.0 + offset.v[0]))
     mesh.matrix = Matrix.multiply(mesh.matrix, scale)
     this.on_change(this.camera, this.scene)
   }
